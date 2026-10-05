@@ -10,7 +10,7 @@ import ModelEvaluation from './components/ModelEvaluation';
 import CustomerTable from './components/CustomerTable';
 import FuseAIPanel from './components/FuseAIPanel';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+const API_BASE = '/api/v1';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Overview');
