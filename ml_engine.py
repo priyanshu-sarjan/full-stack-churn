@@ -11,6 +11,7 @@ from sklearn.metrics import confusion_matrix, roc_auc_score, roc_curve, precisio
 import joblib
 
 DATA_PATH = os.path.join(os.path.dirname(__file__), "archive", "WA_Fn-UseC_-Telco-Customer-Churn.csv")
+CACHE_PATH = os.path.join(os.path.dirname(__file__), "churn_engine_cache.joblib")
 
 def get_dataset_path():
     if os.path.exists(DATA_PATH):
@@ -352,6 +353,52 @@ class ChurnMLEngine:
             'retention_recommendations': recs
         }
 
+    def save_cache(self):
+        try:
+            cache_data = {
+                'model': self.model,
+                'scaler': self.scaler,
+                'kmeans': self.kmeans,
+                'kmeans_scaler': self.kmeans_scaler,
+                'pca': self.pca,
+                'feature_names': self.feature_names,
+                'odds_ratios': self.odds_ratios,
+                'metrics': self.metrics,
+                'segment_profiles': self.segment_profiles,
+                'sample_customers': self.sample_customers
+            }
+            joblib.dump(cache_data, CACHE_PATH, compress=3)
+            print(f"[ML Engine] Model artifacts saved to cache ({CACHE_PATH}).")
+        except Exception as e:
+            print(f"[ML Engine] Failed to save cache: {e}")
+
+    def load_cache(self):
+        if not os.path.exists(CACHE_PATH):
+            return False
+        try:
+            cache_data = joblib.load(CACHE_PATH)
+            self.model = cache_data['model']
+            self.scaler = cache_data['scaler']
+            self.kmeans = cache_data['kmeans']
+            self.kmeans_scaler = cache_data['kmeans_scaler']
+            self.pca = cache_data['pca']
+            self.feature_names = cache_data['feature_names']
+            self.odds_ratios = cache_data['odds_ratios']
+            self.metrics = cache_data['metrics']
+            self.segment_profiles = cache_data['segment_profiles']
+            self.sample_customers = cache_data['sample_customers']
+            print(f"[ML Engine] Loaded pre-trained models and metrics instantly from cache ({CACHE_PATH}).")
+            return True
+        except Exception as e:
+            print(f"[ML Engine] Failed to load cache: {e}")
+            return False
+
+    def initialize(self):
+        if not self.load_cache():
+            self.train_models()
+            self.save_cache()
+
 # Global singleton engine instance
 engine = ChurnMLEngine()
-engine.train_models()
+engine.initialize()
+

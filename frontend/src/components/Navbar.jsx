@@ -4,7 +4,7 @@ import {
   Sparkles, Layers, Sliders, ChevronDown, PanelRightClose, PanelRightOpen 
 } from 'lucide-react';
 
-export default function Navbar({ isSidePanelOpen, toggleSidePanel, activeTab, setActiveTab }) {
+export default function Navbar({ isSidePanelOpen, toggleSidePanel, activeTab, setActiveTab, backendStatus, healthInfo }) {
   return (
     <header style={{
       height: '64px',
@@ -19,7 +19,7 @@ export default function Navbar({ isSidePanelOpen, toggleSidePanel, activeTab, se
       zIndex: 40
     }}>
       {/* Left Navigation Brand & Breadcrumbs */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -46,7 +46,7 @@ export default function Navbar({ isSidePanelOpen, toggleSidePanel, activeTab, se
 
         <div style={{ height: '20px', width: '1px', background: 'rgba(255,255,255,0.1)' }} />
 
-        <button className="btn-secondary" style={{ padding: '6px 10px' }}>
+        <button className="btn-secondary" style={{ padding: '6px 10px' }} title="Back">
           <ArrowLeft size={16} />
         </button>
 
@@ -55,6 +55,34 @@ export default function Navbar({ isSidePanelOpen, toggleSidePanel, activeTab, se
             Customer Churn & Segmentation Engine
           </span>
           <span style={{ fontSize: '0.8rem', color: '#64748b' }}>/ ML v1.0</span>
+        </div>
+
+        {/* Live Engine Status Badge */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          background: backendStatus === 'Online' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+          border: backendStatus === 'Online' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
+          padding: '4px 10px',
+          borderRadius: '20px',
+          fontSize: '0.72rem',
+          fontWeight: '600',
+          color: backendStatus === 'Online' ? '#34d399' : '#fbbf24',
+          marginLeft: '4px',
+          whiteSpace: 'nowrap'
+        }}
+        title={backendStatus === 'Online' ? 'FastAPI Backend & Scikit-Learn Engine Connected and Active' : 'Connecting to ML Engine'}
+        >
+          <span style={{
+            width: '7px',
+            height: '7px',
+            borderRadius: '50%',
+            background: backendStatus === 'Online' ? '#10b981' : '#f59e0b',
+            boxShadow: backendStatus === 'Online' ? '0 0 8px #10b981' : '0 0 8px #f59e0b',
+            display: 'inline-block'
+          }} />
+          <span>{backendStatus === 'Online' ? `Live ML Engine ${healthInfo?.latencyMs ? `(${healthInfo.latencyMs}ms)` : 'Active'}` : 'Connecting...'}</span>
         </div>
 
         {/* Tab Switcher */}

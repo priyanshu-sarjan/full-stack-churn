@@ -21,6 +21,17 @@ export default function FuseAIPanel({ onClose, onAskAI }) {
     "What-if Simulator Guidance"
   ];
 
+  const renderFormattedText = (text) => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={i} style={{ color: '#a5b4fc', fontWeight: '700' }}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
+
   const handleSend = async (textToSend) => {
     const promptText = textToSend || query;
     if (!promptText.trim()) return;
@@ -68,7 +79,17 @@ export default function FuseAIPanel({ onClose, onAskAI }) {
           <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#ffffff' }}>
             Fuse AI
           </span>
-          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>≡</span>
+          <span style={{
+            fontSize: '0.65rem',
+            background: 'rgba(16, 185, 129, 0.15)',
+            color: '#34d399',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            padding: '2px 6px',
+            borderRadius: '10px',
+            fontWeight: '600'
+          }}>
+            Live
+          </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -153,7 +174,7 @@ export default function FuseAIPanel({ onClose, onAskAI }) {
                 lineHeight: '1.4'
               }}
             >
-              {m.text}
+              {renderFormattedText(m.text)}
             </div>
           ))}
           {loading && (

@@ -22,38 +22,64 @@ export default function App() {
   const [oddsRatios, setOddsRatios] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [backendStatus, setBackendStatus] = useState('Connecting...');
+  const [healthInfo, setHealthInfo] = useState(null);
+  const [selectedSimulatorProfile, setSelectedSimulatorProfile] = useState(null);
 
   // Fetch initial ML metrics & segments from FastAPI backend
   useEffect(() => {
     async function loadEngineData() {
       try {
-        const segRes = await fetch(`${API_BASE}/segments`);
-        if (segRes.ok) {
-          const segData = await segRes.json();
+        const t0 = performance.now();
+        // Check health endpoint first
+        try {
+          const healthRes = await fetch(`${API_BASE}/health`);
+          if (healthRes.ok) {
+            const hData = await healthRes.json();
+            const latency = Math.round(performance.now() - t0);
+            setHealthInfo({ ...hData, latencyMs: latency });
+            setBackendStatus('Online');
+          }
+        } catch (e) {
+          console.warn("[App] Health ping failed, proceeding with data endpoints:", e);
+        }
+
+        // Fetch remaining data in parallel
+        const [segRes, perfRes, custRes] = await Promise.allSettled([
+          fetch(`${API_BASE}/segments`),
+          fetch(`${API_BASE}/analytics/model-performance`),
+          fetch(`${API_BASE}/customers?limit=100`)
+        ]);
+
+        if (segRes.status === 'fulfilled' && segRes.value.ok) {
+          const segData = await segRes.value.json();
           setSegments(segData.segments || []);
         }
 
-        const perfRes = await fetch(`${API_BASE}/analytics/model-performance`);
-        if (perfRes.ok) {
-          const perfData = await perfRes.json();
+        if (perfRes.status === 'fulfilled' && perfRes.value.ok) {
+          const perfData = await perfRes.value.json();
           setMetrics(perfData.metrics || null);
           setOddsRatios(perfData.odds_ratios || []);
         }
 
-        const custRes = await fetch(`${API_BASE}/customers?limit=100`);
-        if (custRes.ok) {
-          const custData = await custRes.json();
+        if (custRes.status === 'fulfilled' && custRes.value.ok) {
+          const custData = await custRes.value.json();
           setCustomers(custData.customers || []);
         }
 
         setBackendStatus('Online');
       } catch (err) {
-        console.warn("[App] FastAPI backend offline or connecting, using cached ML engine state:", err);
+        console.warn("[App] FastAPI backend connecting or offline, using cached ML engine state:", err);
         setBackendStatus('Cached Mode');
       }
     }
     loadEngineData();
   }, []);
+
+  const handleSimulateCustomer = (cust) => {
+    if (!cust) return;
+    setSelectedSimulatorProfile(cust);
+    setActiveTab('Simulator');
+  };
 
   // Simulator prediction handler
   const handlePredictChurn = async (profile) => {
@@ -97,6 +123,8 @@ export default function App() {
         toggleSidePanel={() => setIsSidePanelOpen(!isSidePanelOpen)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        backendStatus={backendStatus}
+        healthInfo={healthInfo}
       />
 
       <div className="main-layout">
@@ -122,21 +150,33 @@ export default function App() {
               <ClusterScatterPlot customers={customers} segments={segments} />
 
               {/* Row 5: Interactive Risk Score Simulator */}
-              <RiskSimulator onPredict={handlePredictChurn} />
+              <RiskSimulator 
+                onPredict={handlePredictChurn} 
+                initialProfile={selectedSimulatorProfile} 
+              />
 
               {/* Row 6: Customer Directory Table */}
-              <CustomerTable customers={customers} />
+              <CustomerTable 
+                customers={customers} 
+                onSimulateCustomer={handleSimulateCustomer} 
+              />
             </>
           )}
 
           {/* Tab 2: Dedicated Simulator View */}
           {activeTab === 'Simulator' && (
-            <RiskSimulator onPredict={handlePredictChurn} />
+            <RiskSimulator 
+              onPredict={handlePredictChurn} 
+              initialProfile={selectedSimulatorProfile} 
+            />
           )}
 
           {/* Tab 3: Dedicated Customer Directory */}
           {activeTab === 'Directory' && (
-            <CustomerTable customers={customers} />
+            <CustomerTable 
+              customers={customers} 
+              onSimulateCustomer={handleSimulateCustomer} 
+            />
           )}
 
           {/* Tab 4: Model Evaluation Diagnostics */}

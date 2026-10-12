@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sliders, RefreshCw, Zap, ShieldAlert, CheckCircle2, ArrowRight } from 'lucide-react';
 
-export default function RiskSimulator({ onPredict }) {
+export default function RiskSimulator({ onPredict, initialProfile }) {
   const [profile, setProfile] = useState({
     tenure: 6,
     MonthlyCharges: 85.0,
@@ -18,6 +18,77 @@ export default function RiskSimulator({ onPredict }) {
 
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isLiveApi, setIsLiveApi] = useState(false);
+
+  // Sync when an account is inspected from directory
+  useEffect(() => {
+    if (initialProfile) {
+      setProfile(prev => ({
+        ...prev,
+        tenure: initialProfile.tenure ?? prev.tenure,
+        MonthlyCharges: initialProfile.MonthlyCharges ?? prev.MonthlyCharges,
+        Contract: initialProfile.Contract ?? prev.Contract,
+        InternetService: initialProfile.InternetService ?? prev.InternetService,
+        TechSupport: initialProfile.TechSupport ?? prev.TechSupport,
+        OnlineSecurity: initialProfile.OnlineSecurity ?? prev.OnlineSecurity,
+        PaymentMethod: initialProfile.PaymentMethod ?? prev.PaymentMethod
+      }));
+    }
+  }, [initialProfile]);
+
+  const presets = [
+    {
+      label: '🔥 High-Risk Persona',
+      desc: 'Month-to-month, Fiber, No Support',
+      data: {
+        tenure: 4,
+        MonthlyCharges: 98.0,
+        Contract: 'Month-to-month',
+        InternetService: 'Fiber optic',
+        TechSupport: 'No',
+        OnlineSecurity: 'No',
+        PaperlessBilling: 'Yes',
+        PaymentMethod: 'Electronic check',
+        SeniorCitizen: 0,
+        Partner: 'No',
+        Dependents: 'No'
+      }
+    },
+    {
+      label: '🛡️ Loyal Power User',
+      desc: '2-Year Contract, 58m, Tech Support',
+      data: {
+        tenure: 58,
+        MonthlyCharges: 84.0,
+        Contract: 'Two year',
+        InternetService: 'Fiber optic',
+        TechSupport: 'Yes',
+        OnlineSecurity: 'Yes',
+        PaperlessBilling: 'No',
+        PaymentMethod: 'Credit card (automatic)',
+        SeniorCitizen: 0,
+        Partner: 'Yes',
+        Dependents: 'Yes'
+      }
+    },
+    {
+      label: '🌱 New Budget Account',
+      desc: '3m Tenure, DSL, Basic Service',
+      data: {
+        tenure: 3,
+        MonthlyCharges: 29.0,
+        Contract: 'Month-to-month',
+        InternetService: 'DSL',
+        TechSupport: 'No',
+        OnlineSecurity: 'No',
+        PaperlessBilling: 'No',
+        PaymentMethod: 'Mailed check',
+        SeniorCitizen: 0,
+        Partner: 'No',
+        Dependents: 'No'
+      }
+    }
+  ];
 
   const handleChange = (key, val) => {
     setProfile(prev => ({ ...prev, [key]: val }));
@@ -29,7 +100,9 @@ export default function RiskSimulator({ onPredict }) {
       const res = await onPredict(profile);
       if (res && res.prediction) {
         setResult(res.prediction);
+        setIsLiveApi(true);
       } else {
+        setIsLiveApi(false);
         // Fallback calculation if backend endpoint is unavailable
         let score = 50.0;
         if (profile.Contract === 'Month-to-month') score += 25;
@@ -72,7 +145,7 @@ export default function RiskSimulator({ onPredict }) {
   return (
     <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', pb: '14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             width: '32px',
@@ -87,19 +160,56 @@ export default function RiskSimulator({ onPredict }) {
             <Zap size={18} />
           </div>
           <div>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#ffffff' }}>
-              Interactive "What-If" Churn Risk Simulator
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: '#ffffff' }}>
+                Interactive "What-If" Churn Risk Simulator
+              </h3>
+              <span style={{
+                background: isLiveApi ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)',
+                color: isLiveApi ? '#34d399' : '#a5b4fc',
+                border: isLiveApi ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(99, 102, 241, 0.3)',
+                fontSize: '0.68rem',
+                fontWeight: '700',
+                padding: '2px 8px',
+                borderRadius: '12px'
+              }}>
+                {isLiveApi ? '⚡ Live FastAPI Inference' : '⚡ Local ML Engine'}
+              </span>
+            </div>
             <p style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-              Adjust customer features to observe real-time score reduction & retention impact
+              Adjust customer features or choose a preset persona to observe real-time risk score changes
             </p>
           </div>
         </div>
 
         <button onClick={handleRunSimulation} className="btn-secondary" style={{ fontSize: '0.78rem' }}>
           <RefreshCw size={13} className={loading ? 'spin' : ''} />
-          <span>Recalculate</span>
+          <span>{loading ? 'Computing...' : 'Recalculate'}</span>
         </button>
+      </div>
+
+      {/* Preset Persona Selector */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', background: 'rgba(0,0,0,0.25)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#cbd5e1' }}>
+          Quick Persona Presets:
+        </span>
+        {presets.map((preset, idx) => (
+          <button
+            key={idx}
+            onClick={() => setProfile(preset.data)}
+            className="btn-secondary"
+            style={{
+              fontSize: '0.74rem',
+              padding: '5px 12px',
+              borderRadius: '8px',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}
+            title={preset.desc}
+          >
+            {preset.label}
+          </button>
+        ))}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>

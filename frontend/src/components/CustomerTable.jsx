@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Search, Filter, Eye, ChevronRight, UserCheck, ShieldAlert, X } from 'lucide-react';
+import { Search, Filter, Eye, ChevronRight, UserCheck, ShieldAlert, X, Zap } from 'lucide-react';
 
-export default function CustomerTable({ customers, onSelectCustomer }) {
+export default function CustomerTable({ customers, onSelectCustomer, onSimulateCustomer }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRisk, setSelectedRisk] = useState('All');
   const [selectedSegment, setSelectedSegment] = useState('All');
@@ -172,8 +172,19 @@ export default function CustomerTable({ customers, onSelectCustomer }) {
               <div>Payment Method: <b style={{ color: '#fff' }}>{drawerCustomer.PaymentMethod}</b></div>
             </div>
 
-            <div style={{ textAlign: 'right' }}>
-              <button onClick={() => setDrawerCustomer(null)} className="btn-primary">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button 
+                onClick={() => {
+                  if (onSimulateCustomer) onSimulateCustomer(drawerCustomer);
+                  setDrawerCustomer(null);
+                }} 
+                className="btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Zap size={14} />
+                <span>Simulate in What-If Engine →</span>
+              </button>
+              <button onClick={() => setDrawerCustomer(null)} className="btn-secondary">
                 Close Drawer
               </button>
             </div>
