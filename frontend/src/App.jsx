@@ -27,6 +27,7 @@ export default function App() {
 
   // Fetch initial ML metrics & segments from FastAPI backend
   useEffect(() => {
+    document.title = "Customer Churn";
     async function loadEngineData() {
       try {
         const t0 = performance.now();
